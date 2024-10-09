@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transactions Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+        }
+        .dropdown, .search-box {
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: yellow;
+            margin-bottom: 20px;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+        }
+        .statistics, .chart {
+            margin-bottom: 20px;
+            background-color: yellow;
+        }
+        .statistics div {
+            margin-bottom: 10px;
+            background-color: yellow;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Transactions for Selected Month</h1>
+    
+    <!-- Month Dropdown -->
+    <div class="dropdown">
+        <label for="month-select">Select Month: </label>
+        <select id="month-select">
+            <option value="January">January</option>
+            <option value="February">February</option>
+            <option value="March" selected>March</option>
+            <option value="April">April</option>
+            <!-- Add other months similarly -->
+        </select>
+    </div>
+
+    <!-- Search Box -->
+    <div class="search-box">
+        <input type="text" id="search-input" placeholder="Search Transactions...">
+        <button onclick="searchTransactions()">Search</button>
+    </div>
+
+    <!-- Transactions Table -->
+    <table>
+        <thead>
+                <th>Id</th> 
+                <th>Title</th>
+                <th>Description</th>
+                <th>Price</th>
+                <th>Catagory</th>
+                <th>sold</th>
+                <th>image</th>
+            </tr>
+        </thead>
+        <tbody id="transactions-table">
+            <!-- Data will be populated here -->
+        </tbody>
+    </table>
+
+    <!-- Pagination -->
+    <div class="pagination">
+        <button onclick="prevPage()">Previous</button>
+        <button onclick="nextPage()">Next</button>
+    </div>
+
+    <!-- Statistics -->
+    <div class="statistics">
+        <h2>Statistics</h2>
+        <div>Total Sale Amount: <span id="total-sale"></span></div>
+        <div>Total Sold Items: <span id="total-sold"></span></div>
+        <div>Total Not Sold Items: <span id="total-not-sold"></span></div>
+    </div>
+
+    <!-- Bar Chart -->
+    <div class="chart">
+        <h2>Price Range Distribution</h2>
+        <canvas id="barChart"></canvas>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let currentPage = 1;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        loadTransactions();
+        loadStatistics();
+        loadBarChart();
+    });
+
+    // Fetch transactions based on selected month, search input, and pagination
+    function loadTransactions() {
+        const month = document.getElementById('month-select').value;
+        const search = document.getElementById('search-input').value;
+        // API call to fetch transactions with search and pagination
+        fetch(`https://api.example.com/transactions?month=${month}&page=${currentPage}&search=${search}`)
+            .then(response => response.json())
+            .then(data => {
+                const tableBody = document.getElementById('transactions-table');
+                tableBody.innerHTML = ''; // Clear previous data
+                data.transactions.forEach(transaction => {
+                    const row = `<tr>
+                        <td>${transaction.title}</td>
+                        <td>${transaction.description}</td>
+                        <td>${transaction.price}</td>
+                        <td>${transaction.dateOfSale}</td>
+                    </tr>`;
+                    tableBody.innerHTML += row;
+                });
+            });
+    }
+
+    // Fetch statistics
+    function loadStatistics() {
+        const month = document.getElementById('month-select').value;
+        // API call to fetch statistics
+        fetch(`https://api.example.com/statistics?month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('total-sale').textContent = data.totalSale;
+                document.getElementById('total-sold').textContent = data.totalSold;
+                document.getElementById('total-not-sold').textContent = data.totalNotSold;
+            });
+    }
+
+    // Fetch and display bar chart data
+    function loadBarChart() {
+        const month = document.getElementById('month-select').value;
+        // API call to fetch bar chart data
+        fetch(`https://api.example.com/bar-chart?month=${month}`)
+            .then(response => response.json())
+            .then(data => {
+                const ctx = document.getElementById('barChart').getContext('2d');
+                const barChart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['0-100', '101-200', '201-300', '301-400', '401-500', '501-600', '601-700', '701-800', '801-900', '901+'],
+                        datasets: [{
+                            label: '# of Items',
+                            data: data.priceRanges,
+                            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                            borderColor: 'rgba(75, 192, 192, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            });
+    }
+
+    function searchTransactions() {
+        currentPage = 1;
+        loadTransactions();
+    }
+
+    function prevPage() {
+        if (currentPage > 1) {
+            currentPage--;
+            loadTransactions();
+        }
+    }
+
+    function nextPage() {
+        currentPage++;
+        loadTransactions();
+    }
+</script>
+
+</body>
+</html>
